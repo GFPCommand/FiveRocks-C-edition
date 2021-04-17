@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include "helper.h"
 
 struct FieldSize {
   int x;
@@ -69,19 +70,53 @@ void Setup(int arr[][size.y]){
   }
 }
 
-void DrawField(int arr[][size.y]){
+void SaveGame(int arr[][size.x]){
+  FILE *gs;
+
+  if ((gs = fopen("gamesave", "w"))  == NULL){
+    printf("%s\n", strerror(errno));
+    exit(0);
+  }
+
   for (int i = 0; i < size.y; i++) {
-    for (int j = 0; j < size.x; j++) {
-      if (arr[i][j] == 0){
-        printf("* ");
-      } else if (arr[i][j] == 1){
-        printf("X ");
-      } else if (arr[i][j] == 2){
-        printf("O ");
-      }
+    for(int j = 0; j < size.x; j++){
+        //fprintf(gs, "%d ", arr[i][j]);
+        putc(arr[i][j], gs);
+    }
+    fprintf(gs, "\n");
+  }
+
+  fclose(gs);
+}
+
+void PrintSaveGame(int arr[][size.y]){
+    FILE *rgs;
+
+    int mass[size.x][size.y];
+
+  if ((rgs = fopen("gamesave", "r"))  == NULL){
+    printf("%s\n", strerror(errno));
+    exit(0);
+  }
+  int m = 0, n = 0;
+  while (!feof(rgs)){
+    int buffer = getc(rgs);
+    mass[m][n] = buffer;
+    n++;
+    if (buffer == '\n'){
+        m++;
+        n = 0;
+    }
+  }
+
+  for (int i = 0; i < size.y; i++) {
+    for (int j = 0; j < size.x; j++){
+        printf("%d ", mass[i][j]);
     }
     printf("\n");
   }
+
+  fclose(rgs);
 }
 
 void InputData(int arr[][size.y]){
@@ -98,7 +133,7 @@ void InputData(int arr[][size.y]){
         }
     }
     SaveGame(fieldArray);
-    
+
     exit(0);
   }
   if (coordX > size.x || coordX < 0 || coordY > size.y || coordY < 0){
@@ -513,55 +548,6 @@ void CheckWinner(int arr[][size.y]){
   //--------------------------------------------------
 }
 
-void SaveGame(int arr[][size.x]){
-  FILE *gs;
-  
-  if ((gs = fopen("gamesave", "w"))  == NULL){
-    printf("%s\n", strerror(errno));
-    exit(0);
-  }
-  
-  for (int i = 0; i < size.y; i++) {
-    for(int j = 0; j < size.x; j++){
-        //fprintf(gs, "%d ", arr[i][j]);
-        putc(arr[i][j], gs);
-    }
-    fprintf(gs, "\n");
-  }
-  
-  fclose(gs);
-}
-
-void PrintSaveGame(int arr[][size.y]){
-    FILE *rgs;
-    
-    int mass[size.x][size.y];
-    
-  if ((rgs = fopen("gamesave", "r"))  == NULL){
-    printf("%s\n", strerror(errno));
-    exit(0);
-  }
-  int m = 0, n = 0;
-  while (!feof(rgs)){
-    int buffer = getc(rgs);
-    mass[m][n] = buffer;
-    n++;
-    if (buffer == '\n'){
-        m++;
-        n = 0;
-    }
-  }
-  
-  for (int i = 0; i < size.y; i++) {
-    for (int j = 0; j < size.x; j++){
-        printf("%d ", mass[i][j]);
-    }
-    printf("\n");
-  }
-  
-  fclose(rgs);
-}
-
 int main(int argc, char const *argv[]) {
  if ((fp = fopen("properties.txt", "r"))  == NULL){
     printf("%s\n", strerror(errno));
@@ -572,24 +558,24 @@ int main(int argc, char const *argv[]) {
   size.y = 5;
 
   int field[size.x][size.y];
-  
-  int gameSave[size.x][size.y];
-    
 
-  printf("\nFiveRocks v1.2\n\n");
+  int gameSave[size.x][size.y];
+
+
+  printf("\nFiveRocks v1.3\n\n");
 
   Setup(field);
   while (!properties.isGameEnd){
-    DrawField(field);
+    DrawField(size.x, field);
     InputData(field);
   }
 
   if (properties.isGameEnd){
-    DrawField(field);
+    DrawField(size.x, field);
     CheckWinner(field);
     SaveGame(field);
   }
-  
+
   PrintSaveGame(gameSave);
 
   if (properties.maxLengthOfCross > properties.maxLengthOfCircle) printf("\nWin: X\n");
@@ -600,8 +586,6 @@ int main(int argc, char const *argv[]) {
   printf("maxLengthOfCircle = %d\n", properties.maxLengthOfCircle);
 
   fclose(fp);
-    
-  
 
   return 0;
 }
